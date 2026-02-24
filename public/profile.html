@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BMessage — Мой профиль</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <svg viewBox="0 0 24 24">
+            <path fill="white" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+        Мой профиль
+    </div>
+    
+    <div class="content" id="profileContent">
+        <!-- Загружается через JS -->
+    </div>
+
+    <!-- Модальное окно для редактирования поста -->
+    <div id="editPostModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Редактировать пост</h3>
+            <textarea id="editPostText" rows="4" style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd;"></textarea>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeEditPostModal()" style="padding: 10px 20px; background: #999; color: white; border: none; border-radius: 8px;">Отмена</button>
+                <button onclick="savePostEdit()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px;">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="navbar">
+        <a href="index.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>Лента</span>
+        </a>
+        <a href="chats.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+            <span>Чаты</span>
+        </a>
+        <a href="notifications.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span>Уведом.</span>
+        </a>
+        <a href="profile.html" class="active">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span>Профиль</span>
+        </a>
+        <a href="settings.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            <span>Настройки</span>
+        </a>
+    </div>
+
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        body.dark .modal-content {
+            background: #2d2d2d;
+            color: white;
+        }
+        
+        .post-actions-menu {
+            display: flex;
+            gap: 5px;
+            margin-left: auto;
+        }
+        
+        .post-action-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .post-action-btn:hover {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+        
+        body.dark .post-action-btn:hover {
+            background: #3d3d3d;
+        }
+        
+        .post-action-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+    </style>
+
+    <script>
+        let editingPostId = null;
+        let currentUserId = localStorage.getItem('userId');
+
+        async function loadProfile() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location = 'auth.html';
+                return;
+            }
+
+            try {
+                const res = await fetch('/profile', {
+                    headers: { 'Authorization': token }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    // Применяем тему
+                    if (data.settings && data.settings.theme) {
+                        document.body.className = data.settings.theme;
+                    }
+                    
+                    displayProfile(data);
+                } else {
+                    localStorage.removeItem('token');
+                    window.location = 'auth.html';
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки профиля');
+            }
+        }
+
+        function displayProfile(user) {
+            const container = document.getElementById('profileContent');
+            const regDate = new Date(user.registered).toLocaleDateString();
+            
+            container.innerHTML = `
+                <div class="settings-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            ${user.avatar ? 
+                                `<img src="${user.avatar}">` : 
+                                user.name.charAt(0).toUpperCase()
+                            }
+                        </div>
+                        <div class="profile-name">${user.name}</div>
+                        <div class="profile-email">${user.email}</div>
+                        <div class="profile-date">
+                            <svg viewBox="0 0 24 24" width="16" height="16" style="fill: #999;">
+                                <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                            </svg>
+                            На сайте с ${regDate}
+                        </div>
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <div class="stat-value">${user.posts?.length || 0}</div>
+                                <div class="stat-label">постов</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${user.posts?.reduce((sum, p) => sum + (p.likes?.length || 0), 0) || 0}</div>
+                                <div class="stat-label">лайков</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${user.posts?.reduce((sum, p) => sum + (p.comments?.length || 0), 0) || 0}</div>
+                                <div class="stat-label">коммент.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0 10px;">Мои посты</h3>
+                <div id="userPosts"></div>
+            `;
+
+            if (user.posts && user.posts.length > 0) {
+                displayUserPosts(user.posts);
+            } else {
+                document.getElementById('userPosts').innerHTML = '<div class="settings-card">У вас пока нет постов</div>';
+            }
+        }
+
+        function displayUserPosts(posts) {
+            const container = document.getElementById('userPosts');
+            container.innerHTML = '';
+
+            posts.forEach(post => {
+                const date = new Date(post.timestamp).toLocaleString();
+                
+                const postEl = document.createElement('div');
+                postEl.className = 'post-card';
+                postEl.innerHTML = `
+                    <div class="post-header">
+                        <div class="post-avatar">
+                            ${post.userAvatar ? 
+                                `<img src="${post.userAvatar}">` : 
+                                (post.userName || '?').charAt(0).toUpperCase()
+                            }
+                        </div>
+                        <div class="post-info">
+                            <div class="post-author">${post.userName || 'Пользователь'}</div>
+                            <div class="post-time">${date}</div>
+                        </div>
+                        <div class="post-actions-menu">
+                            <button class="post-action-btn" onclick="editPost('${post.id}', '${post.text.replace(/'/g, "\\'")}')">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                </svg>
+                            </button>
+                            <button class="post-action-btn" onclick="deletePost('${post.id}')">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    ${post.text ? `<div class="post-text">${post.text}</div>` : ''}
+                    ${post.image ? `<img src="${post.image}" class="post-image" onclick="openImage('${post.image}')">` : ''}
+                    <div class="post-actions">
+                        <div class="post-action">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <span>${post.likes?.length || 0}</span>
+                        </div>
+                        <div class="post-action">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M21 6h-2v2h-2V6h-2V4h2V2h2v2h2v2zm-10 3c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 4c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                            <span>${post.comments?.length || 0}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(postEl);
+            });
+        }
+
+        function openImage(url) {
+            window.open(url, '_blank');
+        }
+
+        function editPost(postId, text) {
+            editingPostId = postId;
+            document.getElementById('editPostText').value = text;
+            document.getElementById('editPostModal').style.display = 'flex';
+        }
+
+        function closeEditPostModal() {
+            document.getElementById('editPostModal').style.display = 'none';
+            editingPostId = null;
+        }
+
+        async function savePostEdit() {
+            if (!editingPostId) return;
+            
+            const newText = document.getElementById('editPostText').value;
+            if (!newText) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/posts/${editingPostId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({ text: newText })
+                });
+                
+                if (res.ok) {
+                    closeEditPostModal();
+                    loadProfile();
+                }
+            } catch (e) {
+                console.error('Ошибка редактирования');
+            }
+        }
+
+        async function deletePost(postId) {
+            if (!confirm('Удалить этот пост?')) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': token }
+                });
+                
+                if (res.ok) {
+                    loadProfile();
+                }
+            } catch (e) {
+                console.error('Ошибка удаления');
+            }
+        }
+
+        loadProfile();
+
+        if (!localStorage.getItem('token')) {
+            window.location = 'auth.html';
+        }
+    </script>
+</body>
+</html>

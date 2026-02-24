@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BMessage — Информация о группе</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <svg viewBox="0 0 24 24" style="cursor: pointer;" onclick="goBack()">
+            <path fill="white" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        Информация о группе
+    </div>
+    
+    <div class="content" id="groupContent">
+        <!-- Загружается через JS -->
+    </div>
+
+    <!-- Модалка добавления участников -->
+    <div id="addMemberModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Добавить участника</h3>
+            <input type="text" id="addMemberSearch" placeholder="Поиск пользователей..." oninput="searchUsersToAdd()" style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 12px;">
+            <div id="addMemberResults"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="closeAddMemberModal()" style="flex: 1; padding: 12px; background: #999; color: white; border: none; border-radius: 12px;">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка редактирования группы -->
+    <div id="editGroupModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Настройки группы</h3>
+            
+            <div class="avatar-section" style="margin: 15px 0;">
+                <div class="avatar" id="editGroupAvatarPreview" onclick="document.getElementById('editGroupAvatarInput').click()">
+                    <span>📷</span>
+                </div>
+                <input type="file" id="editGroupAvatarInput" accept="image/*" style="display: none;" onchange="previewEditGroupAvatar()">
+            </div>
+            
+            <input type="text" id="editGroupName" placeholder="Название группы" style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 12px;">
+            
+            <div style="margin: 15px 0;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="allowMembersToAdd">
+                    <span>Разрешить участникам добавлять новых участников</span>
+                </label>
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <label style="font-size: 14px; color: #666;">Ссылка-приглашение:</label>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <input type="text" id="inviteLink" readonly style="flex: 1; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px;">
+                    <button onclick="copyInviteLink()" style="padding: 10px 15px; background: #667eea; color: white; border: none; border-radius: 8px;">Копировать</button>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="closeEditGroupModal()" style="flex: 1; padding: 12px; background: #999; color: white; border: none; border-radius: 12px;">Отмена</button>
+                <button onclick="saveGroupSettings()" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 12px;">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="navbar">
+        <a href="index.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>Лента</span>
+        </a>
+        <a href="chats.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+            <span>Чаты</span>
+        </a>
+        <a href="notifications.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span>Уведом.</span>
+        </a>
+        <a href="profile.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span>Профиль</span>
+        </a>
+        <a href="settings.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            <span>Настройки</span>
+        </a>
+    </div>
+
+    <style>
+        .member-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .member-item:last-child {
+            border-bottom: none;
+        }
+        
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            overflow: hidden;
+        }
+        
+        .member-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .member-name {
+            font-weight: 600;
+        }
+        
+        .member-role {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .member-badge {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #667eea;
+            color: white;
+        }
+        
+        .member-badge.creator {
+            background: #f39c12;
+        }
+        
+        .member-badge.admin {
+            background: #27ae60;
+        }
+        
+        .member-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .member-action-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .member-action-btn:hover {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+        
+        body.dark .member-item {
+            border-color: #444;
+        }
+        
+        body.dark .member-action-btn:hover {
+            background: #3d3d3d;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        body.dark .modal-content {
+            background: #2d2d2d;
+            color: white;
+        }
+        
+        .user-search-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .user-search-item:hover {
+            background: #f5f5f5;
+        }
+        
+        body.dark .user-search-item:hover {
+            background: #3d3d3d;
+        }
+    </style>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const groupId = urlParams.get('id');
+        const currentUserId = localStorage.getItem('userId');
+        let groupData = null;
+        let allUsers = [];
+
+        function goBack() {
+            window.history.back();
+        }
+
+        async function loadGroupInfo() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location = 'auth.html';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/groups/${groupId}`, {
+                    headers: { 'Authorization': token }
+                });
+
+                if (res.ok) {
+                    groupData = await res.json();
+                    displayGroupInfo();
+                } else {
+                    alert('Группа не найдена');
+                    window.location = 'chats.html';
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки информации о группе');
+            }
+        }
+
+        function displayGroupInfo() {
+            const container = document.getElementById('groupContent');
+            const isAdmin = groupData.admins?.includes(currentUserId);
+            const isCreator = groupData.creator === currentUserId;
+            const canAdd = isAdmin || groupData.allowMembersToAdd;
+            
+            container.innerHTML = `
+                <div class="settings-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            ${groupData.avatar ? 
+                                `<img src="${groupData.avatar}">` : 
+                                '👥'
+                            }
+                        </div>
+                        <div class="profile-name">${groupData.name}</div>
+                        <div class="profile-date">
+                            Создана ${new Date(groupData.created).toLocaleDateString()}
+                        </div>
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <div class="stat-value">${groupData.members?.length || 0}</div>
+                                <div class="stat-label">участников</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${groupData.admins?.length || 0}</div>
+                                <div class="stat-label">админов</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${groupData.messages?.length || 0}</div>
+                                <div class="stat-label">сообщений</div>
+                            </div>
+                        </div>
+                        ${isCreator ? `
+                            <button class="message-btn" onclick="showEditGroupModal()">
+                                <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align: middle; margin-right: 5px; fill: white;">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                </svg>
+                                Настроить группу
+                            </button>
+                        ` : (canAdd ? `
+                            <button class="message-btn" onclick="showAddMemberModal()">
+                                <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align: middle; margin-right: 5px; fill: white;">
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                </svg>
+                                Добавить участника
+                            </button>
+                        ` : '')}
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0 10px;">Участники</h3>
+                <div id="membersList" class="settings-card"></div>
+            `;
+
+            displayMembers();
+        }
+
+        function displayMembers() {
+            const container = document.getElementById('membersList');
+            container.innerHTML = '';
+
+            groupData.membersInfo?.forEach(member => {
+                const isAdmin = member.isAdmin;
+                const isCreator = member.isCreator;
+                const canRemove = (groupData.creator === currentUserId) || 
+                                 (groupData.admins?.includes(currentUserId) && !isCreator);
+                
+                const memberEl = document.createElement('div');
+                memberEl.className = 'member-item';
+                memberEl.innerHTML = `
+                    <div class="member-info" onclick="goToUserProfile('${member.id}')">
+                        <div class="member-avatar">
+                            ${member.avatar ? 
+                                `<img src="${member.avatar}">` : 
+                                member.name.charAt(0).toUpperCase()
+                            }
+                        </div>
+                        <div>
+                            <div class="member-name">${member.name}</div>
+                            <div class="member-role">
+                                ${isCreator ? '👑 Создатель' : (isAdmin ? '🛡️ Админ' : '👤 Участник')}
+                            </div>
+                        </div>
+                    </div>
+                    ${canRemove && member.id !== currentUserId ? `
+                        <div class="member-actions">
+                            ${groupData.creator === currentUserId && !isCreator && !isAdmin ? `
+                                <button class="member-action-btn" onclick="makeAdmin('${member.id}')">Назначить админом</button>
+                            ` : ''}
+                            ${groupData.creator === currentUserId && isAdmin && !isCreator ? `
+                                <button class="member-action-btn" onclick="removeAdmin('${member.id}')">Снять админа</button>
+                            ` : ''}
+                            <button class="member-action-btn" onclick="removeMember('${member.id}')">Удалить</button>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(memberEl);
+            });
+        }
+
+        function goToUserProfile(userId) {
+            if (userId === currentUserId) {
+                window.location = 'profile.html';
+            } else {
+                window.location = `user.html?id=${userId}`;
+            }
+        }
+
+        // Добавление участников
+        function showAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'flex';
+            loadAllUsers();
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = 'none';
+            document.getElementById('addMemberSearch').value = '';
+            document.getElementById('addMemberResults').innerHTML = '';
+        }
+
+        async function loadAllUsers() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/users/search/`, {
+                    headers: { 'Authorization': token }
+                });
+                if (res.ok) {
+                    allUsers = await res.json();
+                }
+            } catch (e) {}
+        }
+
+        function searchUsersToAdd() {
+            const query = document.getElementById('addMemberSearch').value.toLowerCase();
+            const results = allUsers.filter(u => 
+                u.id !== currentUserId && 
+                !groupData.members.includes(u.id) &&
+                (u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query))
+            );
+            
+            const container = document.getElementById('addMemberResults');
+            container.innerHTML = '';
+            
+            results.slice(0, 10).forEach(user => {
+                const userEl = document.createElement('div');
+                userEl.className = 'user-search-item';
+                userEl.onclick = () => addMember(user.id);
+                userEl.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="member-avatar" style="width: 30px; height: 30px;">
+                            ${user.avatar ? `<img src="${user.avatar}">` : user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div>${user.name}</div>
+                            <div style="font-size: 12px; color: #999;">${user.email}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(userEl);
+            });
+        }
+
+        async function addMember(userId) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/groups/${groupId}/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({ userId })
+                });
+
+                if (res.ok) {
+                    closeAddMemberModal();
+                    loadGroupInfo();
+                }
+            } catch (e) {
+                console.error('Ошибка добавления участника');
+            }
+        }
+
+        // Удаление участника
+        async function removeMember(userId) {
+            if (!confirm('Удалить этого участника из группы?')) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/groups/${groupId}/members/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': token }
+                });
+
+                if (res.ok) {
+                    loadGroupInfo();
+                }
+            } catch (e) {
+                console.error('Ошибка удаления участника');
+            }
+        }
+
+        // Назначение админа
+        async function makeAdmin(userId) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/groups/${groupId}/admins`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({ userId })
+                });
+
+                if (res.ok) {
+                    loadGroupInfo();
+                }
+            } catch (e) {
+                console.error('Ошибка назначения админа');
+            }
+        }
+
+        // Снятие админа
+        async function removeAdmin(userId) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`/groups/${groupId}/admins/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': token }
+                });
+
+                if (res.ok) {
+                    loadGroupInfo();
+                }
+            } catch (e) {
+                console.error('Ошибка снятия админа');
+            }
+        }
+
+        // Редактирование группы
+        function showEditGroupModal() {
+            document.getElementById('editGroupName').value = groupData.name;
+            document.getElementById('allowMembersToAdd').checked = groupData.allowMembersToAdd || false;
+            document.getElementById('inviteLink').value = window.location.origin + '/join.html?link=' + groupData.inviteLink;
+            
+            if (groupData.avatar) {
+                document.getElementById('editGroupAvatarPreview').innerHTML = `<img src="${groupData.avatar}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            }
+            
+            document.getElementById('editGroupModal').style.display = 'flex';
+        }
+
+        function closeEditGroupModal() {
+            document.getElementById('editGroupModal').style.display = 'none';
+        }
+
+        function previewEditGroupAvatar() {
+            const file = document.getElementById('editGroupAvatarInput').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('editGroupAvatarPreview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function copyInviteLink() {
+            const link = document.getElementById('inviteLink');
+            link.select();
+            document.execCommand('copy');
+            alert('Ссылка скопирована!');
+        }
+
+        async function saveGroupSettings() {
+            const name = document.getElementById('editGroupName').value;
+            const allowMembersToAdd = document.getElementById('allowMembersToAdd').checked;
+            
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('allowMembersToAdd', allowMembersToAdd);
+            
+            const fileInput = document.getElementById('editGroupAvatarInput');
+            if (fileInput.files[0]) {
+                formData.append('avatar', fileInput.files[0]);
+            }
+
+            try {
+                const res = await fetch(`/groups/${groupId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': token
+                    },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    closeEditGroupModal();
+                    loadGroupInfo();
+                }
+            } catch (e) {
+                console.error('Ошибка сохранения настроек группы');
+            }
+        }
+
+        // Применяем тему
+        async function applyTheme() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch('/profile', {
+                    headers: { 'Authorization': token }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.settings && data.settings.theme) {
+                        document.body.className = data.settings.theme;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        applyTheme();
+        loadGroupInfo();
+
+        if (!localStorage.getItem('token')) {
+            window.location = 'auth.html';
+        }
+    </script>
+</body>
+</html>

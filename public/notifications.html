@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BMessage — Уведомления</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <svg viewBox="0 0 24 24">
+            <path fill="white" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+        </svg>
+        Уведомления
+    </div>
+    
+    <div class="content" id="notifications">
+        <!-- Загружается через JS -->
+    </div>
+
+    <div class="navbar">
+        <a href="index.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>Лента</span>
+        </a>
+        <a href="chats.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+            <span>Чаты</span>
+        </a>
+        <a href="notifications.html" class="active">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span>Уведом.</span>
+        </a>
+        <a href="profile.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span>Профиль</span>
+        </a>
+        <a href="settings.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            <span>Настройки</span>
+        </a>
+    </div>
+
+    <script>
+        let currentUserId = localStorage.getItem('userId');
+
+        async function loadNotifications() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location = 'auth.html';
+                return;
+            }
+
+            try {
+                const res = await fetch('/notifications', {
+                    headers: { 'Authorization': token }
+                });
+
+                if (res.ok) {
+                    const notifications = await res.json();
+                    displayNotifications(notifications);
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки уведомлений');
+            }
+        }
+
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notifications');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="settings-card">У вас пока нет уведомлений</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <button onclick="markAllAsRead()" style="margin-bottom: 15px; padding: 10px; background: #667eea; color: white; border: none; border-radius: 12px; width: 100%;">
+                    Отметить все как прочитанные
+                </button>
+            `;
+
+            notifications.forEach(notification => {
+                const date = new Date(notification.timestamp).toLocaleString();
+                let text = '';
+                
+                if (notification.type === 'like') {
+                    text = `${notification.fromUserName} поставил лайк вашему посту: "${notification.postText}"`;
+                } else if (notification.type === 'comment') {
+                    text = `${notification.fromUserName} оставил комментарий: "${notification.commentText}" к посту: "${notification.postText}"`;
+                }
+
+                const notifEl = document.createElement('div');
+                notifEl.className = `notification-card ${notification.read ? '' : 'unread'}`;
+                notifEl.onclick = () => markAsRead(notification.id);
+                notifEl.innerHTML = `
+                    <div class="notification-header">
+                        <div class="notification-avatar">
+                            ${notification.fromUserName?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-text">${text}</div>
+                            <div class="notification-time">${date}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(notifEl);
+            });
+        }
+
+        async function markAsRead(id) {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`/notifications/read/${id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': token }
+                });
+                loadNotifications();
+            } catch (e) {}
+        }
+
+        async function markAllAsRead() {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch('/notifications/read-all', {
+                    method: 'POST',
+                    headers: { 'Authorization': token }
+                });
+                loadNotifications();
+            } catch (e) {}
+        }
+
+        // Применяем тему
+        async function applyTheme() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch('/profile', {
+                    headers: { 'Authorization': token }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.settings && data.settings.theme) {
+                        document.body.className = data.settings.theme;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        applyTheme();
+        loadNotifications();
+
+        if (!localStorage.getItem('token')) {
+            window.location = 'auth.html';
+        }
+    </script>
+</body>
+</html>
