@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BMessage — Лента</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <svg viewBox="0 0 24 24">
+            <path fill="white" d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2z"/>
+        </svg>
+        BMessage — Лента
+    </div>
+    
+    <div class="content">
+        <!-- Создание поста -->
+        <div class="settings-card create-post">
+            <textarea id="postText" placeholder="Что у вас нового?"></textarea>
+            <div class="post-buttons">
+                <button class="image-button" onclick="document.getElementById('postImage').click()">
+                    <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align: middle;">
+                        <path fill="white" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    </svg>
+                    Фото
+                </button>
+                <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="previewImage()">
+                <button onclick="createPost()">Опубликовать</button>
+            </div>
+        </div>
+
+        <!-- Лента постов -->
+        <div id="posts"></div>
+    </div>
+
+    <div class="navbar">
+        <a href="index.html" class="active">
+            <svg viewBox="0 0 24 24">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>Лента</span>
+        </a>
+        <a href="chats.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+            <span>Чаты</span>
+        </a>
+        <a href="notifications.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span>Уведом.</span>
+        </a>
+        <a href="profile.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span>Профиль</span>
+        </a>
+        <a href="settings.html">
+            <svg viewBox="0 0 24 24">
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            <span>Настройки</span>
+        </a>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let currentUserId = localStorage.getItem('userId');
+
+        // Применяем тему при загрузке
+        async function applyTheme() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            try {
+                const res = await fetch('/profile', {
+                    headers: { 'Authorization': token }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.settings && data.settings.theme) {
+                        document.body.className = data.settings.theme;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function previewImage() {
+            const file = document.getElementById('postImage').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentImage = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function createPost() {
+            const text = document.getElementById('postText').value;
+            if (!text && !currentImage) {
+                alert('Напишите что-нибудь или добавьте фото');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch('/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({ 
+                        text, 
+                        image: currentImage 
+                    })
+                });
+
+                if (res.ok) {
+                    document.getElementById('postText').value = '';
+                    currentImage = null;
+                    document.getElementById('postImage').value = '';
+                    loadPosts();
+                }
+            } catch (e) {
+                console.error('Ошибка создания поста');
+            }
+        }
+
+        async function loadPosts() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location = 'auth.html';
+                return;
+            }
+
+            try {
+                const res = await fetch('/posts', {
+                    headers: { 'Authorization': token }
+                });
+
+                if (res.ok) {
+                    const posts = await res.json();
+                    displayPosts(posts);
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки постов');
+            }
+        }
+
+        function displayPosts(posts) {
+            const container = document.getElementById('posts');
+            container.innerHTML = '';
+
+            posts.forEach(post => {
+                const date = new Date(post.timestamp).toLocaleString();
+                const isLiked = post.likes && post.likes.includes(currentUserId);
+                
+                const postEl = document.createElement('div');
+                postEl.className = 'post-card';
+                postEl.innerHTML = `
+                    <div class="post-header" onclick="goToProfile('${post.userId}')">
+                        <div class="post-avatar">
+                            ${post.user?.avatar ? 
+                                `<img src="${post.user.avatar}">` : 
+                                (post.user?.name?.charAt(0) || '?').toUpperCase()
+                            }
+                        </div>
+                        <div class="post-info">
+                            <div class="post-author">${post.user?.name || 'Пользователь'}</div>
+                            <div class="post-time">${date}</div>
+                        </div>
+                    </div>
+                    ${post.text ? `<div class="post-text">${post.text}</div>` : ''}
+                    ${post.image ? `<img src="${post.image}" class="post-image" onclick="openImage('${post.image}')">` : ''}
+                    <div class="post-actions">
+                        <div class="post-action ${isLiked ? 'liked' : ''}" onclick="likePost('${post.id}')">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <span>${post.likes?.length || 0}</span>
+                        </div>
+                        <div class="post-action" onclick="toggleComments('${post.id}')">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M21 6h-2v2h-2V6h-2V4h2V2h2v2h2v2zm-10 3c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 4c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                            <span>${post.comments?.length || 0}</span>
+                        </div>
+                    </div>
+                    <div class="comments-section" id="comments-${post.id}" style="display: none;">
+                        ${(post.comments || []).map(comment => `
+                            <div class="comment">
+                                <div class="comment-avatar" onclick="goToProfile('${comment.userId}')">
+                                    ${comment.userAvatar ? 
+                                        `<img src="${comment.userAvatar}">` : 
+                                        comment.userName.charAt(0).toUpperCase()
+                                    }
+                                </div>
+                                <div class="comment-content">
+                                    <div class="comment-author" onclick="goToProfile('${comment.userId}')">${comment.userName}</div>
+                                    <div class="comment-text">${comment.text}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <div class="comment-input">
+                            <input type="text" id="comment-${post.id}" placeholder="Напишите комментарий...">
+                            <button onclick="addComment('${post.id}')">Отправить</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(postEl);
+            });
+        }
+
+        function goToProfile(userId) {
+            if (userId === currentUserId) {
+                window.location = 'profile.html';
+            } else {
+                window.location = `user.html?id=${userId}`;
+            }
+        }
+
+        function openImage(url) {
+            window.open(url, '_blank');
+        }
+
+        async function likePost(postId) {
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: { 'Authorization': token }
+                });
+                loadPosts();
+            } catch (e) {
+                console.error('Ошибка лайка');
+            }
+        }
+
+        async function addComment(postId) {
+            const input = document.getElementById(`comment-${postId}`);
+            const text = input.value;
+            if (!text) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                await fetch(`/posts/${postId}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({ text })
+                });
+                input.value = '';
+                loadPosts();
+            } catch (e) {
+                console.error('Ошибка комментария');
+            }
+        }
+
+        function toggleComments(postId) {
+            const comments = document.getElementById(`comments-${postId}`);
+            comments.style.display = comments.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Загружаем тему и посты
+        applyTheme();
+        loadPosts();
+
+        // Проверка авторизации
+        if (!localStorage.getItem('token')) {
+            window.location = 'auth.html';
+        }
+    </script>
+</body>
+</html>
