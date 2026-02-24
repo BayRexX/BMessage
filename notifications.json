@@ -1,0 +1,59 @@
+[
+  {
+    "id": "1771950710927",
+    "userId": "1771948754166",
+    "type": "like",
+    "fromUserId": "1771950678437",
+    "fromUserName": "admin",
+    "postId": "1771948839661",
+    "postText": "Нечего",
+    "timestamp": 1771950710927,
+    "read": true
+  },
+  {
+    "id": "1771950712349",
+    "userId": "1771948754166",
+    "type": "like",
+    "fromUserId": "1771950678437",
+    "fromUserName": "admin",
+    "postId": "1771948791186",
+    "postText": "Пост",
+    "timestamp": 1771950712349,
+    "read": true
+  },
+  {
+    "id": "1771950764705",
+    "userId": "1771948754166",
+    "type": "comment",
+    "fromUserId": "1771950678437",
+    "fromUserName": "admin",
+    "postId": "1771948791186",
+    "postText": "Пост",
+    "commentText": "Комент",
+    "timestamp": 1771950764705,
+    "read": true
+  },
+  {
+    "id": "1771954796168",
+    "userId": "1771948754166",
+    "type": "comment",
+    "fromUserId": "1771950678437",
+    "fromUserName": "admin",
+    "postId": "1771948839661",
+    "postText": "Да",
+    "commentText": "Пхпхпххп",
+    "timestamp": 1771954796168,
+    "read": false
+  },
+  {
+    "id": "1771954798981",
+    "userId": "1771948754166",
+    "type": "like",
+    "fromUserId": "1771950678437",
+    "fromUserName": "admin",
+    "postId": "1771948839661",
+    "postText": "Да",
+    "timestamp": 1771954798981,
+    "read": false
+  }
+]
