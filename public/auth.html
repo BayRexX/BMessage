@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BMessage — Вход</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-bg">
+        <div class="card">
+            <h2>
+                <svg viewBox="0 0 24 24" width="32" height="32" style="vertical-align: middle;">
+                    <path fill="#667eea" d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                BMessage
+            </h2>
+            <input type="email" id="email" placeholder="Электронная почта" autocomplete="email">
+            <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
+            <button onclick="register()">
+                <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align: middle; margin-right: 5px;">
+                    <path fill="white" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                Регистрация
+            </button>
+            <button onclick="login()">
+                <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align: middle; margin-right: 5px;">
+                    <path fill="#667eea" d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/>
+                </svg>
+                Войти
+            </button>
+        </div>
+    </div>
+
+    <script>
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Заполните все поля');
+                return;
+            }
+
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+                alert(data.message);
+            } catch (e) {
+                alert('Ошибка соединения');
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Введите email и пароль');
+                return;
+            }
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userId', data.user.id);
+                    
+                    // Применяем тему при входе
+                    if (data.user.settings && data.user.settings.theme) {
+                        document.body.className = data.user.settings.theme;
+                    }
+                    
+                    // Проверяем, есть ли ожидаемое приглашение
+                    const pendingInvite = localStorage.getItem('pendingInvite');
+                    if (pendingInvite) {
+                        localStorage.removeItem('pendingInvite');
+                        window.location = 'join.html?link=' + pendingInvite;
+                    } else {
+                        window.location = 'index.html';
+                    }
+                } else {
+                    alert(data.message || 'Ошибка входа');
+                }
+            } catch (e) {
+                alert('Ошибка соединения');
+            }
+        }
+    </script>
+</body>
+</html>
